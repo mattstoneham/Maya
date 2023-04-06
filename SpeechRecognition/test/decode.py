@@ -1,5 +1,5 @@
 
-import speech_recognition as sr
+import speechrec as sr
 print('test')
 
 r = sr.Recognizer()
