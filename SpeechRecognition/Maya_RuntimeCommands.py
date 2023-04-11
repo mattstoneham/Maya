@@ -3,41 +3,52 @@ import maya.cmds as cmds
 import maya.mel as mel
 import subprocess
 
-def get_command_from_dict(command):
-
-    command_dict = {'paint weights': 'cmds.ArtPaintSkinWeightsToolOptions()',
-                    'paint skin weights': 'cmds.ArtPaintSkinWeightsToolOptions()',
-                    'paint whites': 'cmds.ArtPaintSkinWeightsToolOptions()',
-                    'paint skin whites': 'cmds.ArtPaintSkinWeightsToolOptions()',
-                    'set timeline to selected': 'set_timeline_to_selected()',
-                    'timeline to selected': 'set_timeline_to_selected()',
-                    'set timeline to selection': 'set_timeline_to_selected()',
-                    'timeline to selection': 'set_timeline_to_selected()',
-                    'toggle state': 'toggle_state()',
-                    'skin copy': 'skin_copy()',
-                    'parent snap': 'snap(\'parent\')',
-                    'orient snap': 'snap(\'orient\')',
-                    'point snap': 'snap(\'point\')'
-                    }
-    try:
-        return command_dict[command]
-    except:
-        return(False)
-
-def get_command(command):
-command = 'paint skin weights'
-command_dict = {'cmds.ArtPaintSkinWeightsToolOptions()': ['skin', 'paint', 'weight', 'weights', 'white', 'whites', 'tool'],
+command_dict = {'cmds.ArtPaintSkinWeightsToolOptions()': ['skin', 'paint', 'painting', 'weight', 'weights', 'white', 'whites', 'tool'],
                 'set_timeline_to_selected()': ['set', 'timeline', 'selected', 'selection'],
                 'toggle_state()': ['toggle', 'node', 'state'],
                 'skin_copy()': ['copy', 'skin', 'weights', 'whites'],
                 'snap(\'parent\')': ['parent', 'snap'],
-                'snap(\'point\')': ['point', 'snap'],
-                'snap(\'orient\')': ['orient', 'Orient', 'snap']
+                'snap(\'point\')': ['point', 'translate', 'translation', 'snap'],
+                'snap(\'orient\')': ['orient', 'Orient', 'orientation', 'rotate', 'rotation', 'snap']
 }
-probability = []
-for key, value in command_dict.items():
-    print(key, value)
 
+
+def get_all_command_keywords():
+    keywords = []
+    for key, values in command_dict.items():
+        for value in values:
+            keywords.append(value)
+    return keywords
+
+def strip_non_keywords_from_text(text):
+    stripped = []
+    all_keywords = get_all_command_keywords()
+    for item in text.split(' '):
+        if item in all_keywords:
+            stripped.append(item)
+    return stripped
+
+
+def get_command(command, confidence_threshold=50):
+    # strip all non keywords from the passed speech-to-text result
+    strippedcommand = strip_non_keywords_from_text(command)
+    if strippedcommand:
+        percentmatch_dict = {}
+        # count speech-to-text keyword occurrences in command dict
+        for key, values in command_dict.items():
+            occurrences = len(list(set(strippedcommand) & set(values)))
+            percentmatch_dict[key] = ((100 / len(strippedcommand)) * occurrences)
+        #print(percentmatch_dict)
+        # filter out highest match above confidence threshold
+        high = 0
+        for key, value in percentmatch_dict.items():
+            if value > confidence_threshold and value > high:
+                key_store = key
+                value_store = value
+                high = value
+        returned_command = {}
+        returned_command[key_store] = value_store
+        return returned_command
 
 def set_timeline_to_selected():
     try:
@@ -117,8 +128,39 @@ def main():
     print('\n\nReturned string: {0}'.format(pl.stdout))
     slice = str(pl.stdout)[2:-5].lower()
     print('Sliced string: {0}'.format(slice))
+
     command = get_command_from_dict(str(pl.stdout)[2:-5])
+
     print('Command : {0}\n\n'.format(command))
     exec(command)
 
 main()
+
+
+
+# test below this line
+
+
+def test_voice_commands(command_list, confidence_threshold=50):
+    for command in command_list:
+        returned_command = get_command(command, confidence_threshold=confidence_threshold)
+        print(command, ':', returned_command)
+
+'''
+
+command_list = ['cpen the skin weights paint tool',
+                'copy skin weights',
+                'paint skin weights',
+                'copy weights',
+                'I need a cup of tea',
+                'snap orientation',
+                'snap to point',
+                'parent snap',
+                'set timeline to selection'
+]
+test_voice_commands(command_list)
+
+text = 'Open the skin weights paint tool'
+strip_non_keywords_from_text(text)
+
+'''

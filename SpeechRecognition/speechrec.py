@@ -2,6 +2,7 @@ import speech_recognition as sr
 
 r = sr.Recognizer()
 mic_name = 'Microphone (Blue Snowball )'
+#mic_name = 'Microphone Array (IntelÂ® Smart'
 
 def get_string_from_audio(device_index, debug = False):
     mic = sr.Microphone(device_index=device_index) # Snowball mic
@@ -33,5 +34,13 @@ def get_microphone_index_by_name(string_match):
 if __name__ == '__main__':
     get_string_from_audio(device_index=get_microphone_index_by_name(mic_name))
 
+
+
+''' test 
+
+for m in sr.Microphone.list_microphone_names():
+    print(m)
+
+'''
 
 
