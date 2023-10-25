@@ -46,8 +46,7 @@ def get_command(command, confidence_threshold=50):
                 key_store = key
                 value_store = value
                 high = value
-        returned_command = {}
-        returned_command[key_store] = value_store
+        returned_command = {'command': key_store, 'value': value_store}
         return returned_command
 
 def set_timeline_to_selected():
@@ -124,15 +123,17 @@ def snap(type = ''):
 
 
 def main():
+    # run audio capture and voice to text
     pl = subprocess.run('python D:/GitHub/Maya/SpeechRecognition/speechrec.py', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     print('\n\nReturned string: {0}'.format(pl.stdout))
     slice = str(pl.stdout)[2:-5].lower()
     print('Sliced string: {0}'.format(slice))
 
-    command = get_command_from_dict(str(pl.stdout)[2:-5])
+    # convert returned voice to text result to Maya command
+    command = get_command(str(pl.stdout)[2:-5])
 
-    print('Command : {0}\n\n'.format(command))
-    exec(command)
+    print('Command : {0} with confidence level {1}\n\n'.format(command['command'], command['value']))
+    exec(command['command'])
 
 main()
 
